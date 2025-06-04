@@ -1,0 +1,75 @@
+import hashlib
+import os
+import sys
+
+def calculate_hash(file_path):
+    """Calculate SHA-256 hash of the given file."""
+    sha256_hash = hashlib.sha256()
+    try:
+        with open(file_path, 'rb') as f:
+            for chunk in iter(lambda: f.read(4096), b''):
+                sha256_hash.update(chunk)
+        return sha256_hash.hexdigest()
+    except FileNotFoundError:
+        print(f"Error: File not found: {file_path}")
+        return None
+
+def generate_hash_file(file_path):
+    """Generate hash and save it to a .sha256 file."""
+    file_hash = calculate_hash(file_path)
+    if file_hash:
+        hash_file_path = file_path + ".sha256"
+        try:
+            with open(hash_file_path, 'w') as f:
+                f.write(file_hash)
+            print(f"Hash generated and saved to {hash_file_path}")
+        except IOError as e:
+            print(f"Error writing hash file: {e}")
+
+def verify_file_integrity(file_path):
+    """Verify the integrity of the file by comparing current and saved hash."""
+    hash_file_path = file_path + ".sha256"
+    if not os.path.exists(hash_file_path):
+        print(f"Error: Hash file not found: {hash_file_path}")
+        return
+
+    current_hash = calculate_hash(file_path)
+    if not current_hash:
+        return
+
+    try:
+        with open(hash_file_path, 'r') as f:
+            saved_hash = f.read().strip()
+    except IOError as e:
+        print(f"Error reading hash file: {e}")
+        return
+
+    if current_hash == saved_hash:
+        print("File integrity verified: The file is intact.")
+    else:
+        print("File integrity check FAILED: The file has been altered!")
+
+def print_usage():
+    print("Usage:")
+    print("  python file_integrity_checker.py generate <file_path>  # Generate hash file")
+    print("  python file_integrity_checker.py verify <file_path>    # Verify file integrity")
+
+def main():
+    if len(sys.argv) != 3:
+        print_usage()
+        return
+
+    command = sys.argv[1].lower()
+    file_path = sys.argv[2]
+
+    if command == 'generate':
+        generate_hash_file(file_path)
+    elif command == 'verify':
+        verify_file_integrity(file_path)
+    else:
+        print_usage()
+
+if __name__ == "__main__":
+    main()
+
+ 
